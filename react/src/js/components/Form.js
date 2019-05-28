@@ -1,6 +1,7 @@
 import React from "react";
 import axios from "axios";
 import GoodsData from "./GoodsData";
+import ErrorMsg from "./ErrorMsg";
 
 const url = 'http://localhost:9085/search';
 
@@ -10,15 +11,34 @@ export default class Form extends React.Component {
     this.state = {
       goods: null,
       result: "none",
-      error: 0,
+      error: "none",
       records: 0
     };
     this.elements = null;
     this.handleFormSubmit = this.handleFormSubmit.bind(this);
   }
 
+  init () {
+    this.state = {
+      goods: null,
+      result: "none",
+      error: "none",
+      records: 0
+    };
+    this.elements = null;
+  }
+
+  isValidStr (string) {
+    if (string.match(/[\"\'%;]/)){
+      return false;
+    } else {
+      return true;
+    }
+  }
+
   handleFormSubmit(event) {
     event.preventDefault();
+    this.setState({error: "none"});
 
     //JSONデータ作成
     //elementsに保存されたデータからフォームデータを取得する。
@@ -27,24 +47,26 @@ export default class Form extends React.Component {
       name: this.elements['name'].value,
     };
     if (JSONdata.name == ""){
-      this.setState({error: 1});
+      this.setState({error: "blank"});
+      return;
+    }
+    if (!this.isValidStr(JSONdata.name)){
+      this.setState({error: "invalidString"});
       return;
     }
 
     //APIに商品検索データをPOSTし、情報を取得する。
     axios.post(url, JSONdata).then((res) => {
-      this.setState({error: 0});
       this.setState({result: JSON.stringify(res.data)});
       this.setState({goods: res.data});
       this.setState({records: res.data.length});
     }).catch(err => {
-      this.setState({error: 2});
+      this.setState({error: "noData"});
     });
   }
 
   //商品名検索フォーム表示
   render() {
-    var visible = (this.state.records != 0);
     return (
 	<div align="center">
 	<form className="search" onSubmit={this.handleFormSubmit} ref={el => this.elements = el && el.elements} >
@@ -52,9 +74,9 @@ export default class Form extends React.Component {
 	  <input type="submit" value="送信" /><br />
 	</form>
 	<br />
-	{ visible && <GoodsData data={this.state.goods} records={this.state.records } />}<br />
-	{ this.state.error == 1 && <div><font color = "red">商品名を入力してください</font></div> }<br />
-	{ this.state.error == 2 && <div><font color = "red">商品が存在しません</font></div> }<br />
+	<ErrorMsg msg = {this.state.error} />
+	{this.state.error == "none" &&
+		<GoodsData data={this.state.goods} records={this.state.records} />}
 	</div>
     );
   }

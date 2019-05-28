@@ -15,6 +15,13 @@ export default class GoodsData extends React.Component {
 	</tr>
       );
     }
+    if (records == 0) {
+      return(
+	<div>
+	</div>
+      )
+    }
+
     return (
       <div>
 	{records} 件見つかりました。<br /><br />
